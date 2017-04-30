@@ -277,9 +277,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
-			<resource>
-				<directory>target/generated-sources/axis2/wsdl2code</directory>
-			</resource>
 		</resources>
 		<plugins>
 			<plugin>
