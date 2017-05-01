@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Past;
+import javax.validation.constraints.Size;
 
 /**
  *
@@ -27,7 +29,7 @@ public class EventPublishRequest {
 
 	@JsonProperty("description")
 	@NotEmpty
-	@Min(20)
+	@Size(min = 20)
 	private String eventDescription;
 
 	@JsonProperty("start")
@@ -80,6 +82,10 @@ public class EventPublishRequest {
 	@JsonProperty("latitude")
 	@NotEmpty
 	private String latitude;
+
+	@JsonProperty("import_src_name")
+	@NotEmpty
+	private String importSrcName;
 
 	@JsonProperty("import_event_id")
 	private String importEventId;
@@ -150,6 +156,7 @@ public class EventPublishRequest {
 				", eventTicketLink='" + eventTicketLink + '\'' +
 				", longitude='" + longitude + '\'' +
 				", latitude='" + latitude + '\'' +
+				", importSrcName='" + importSrcName + '\'' +
 				", importEventId='" + importEventId + '\'' +
 				", importSecret='" + importSecret + '\'' +
 				", importStatus='" + importStatus + '\'' +

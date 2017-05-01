@@ -36,7 +36,7 @@ public class EventManagerController {
             produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public EventPublishResponse publish(@Valid @RequestBody EventPublishRequest eventPublishRequest) {
         logger.info("Request : " + eventPublishRequest);
-        EventPublishResponse response = service.startBackgroundJob(eventPublishRequest);
+        EventPublishResponse response = service.process(eventPublishRequest);
 
         logger.info("Response : " + response);
         return response;

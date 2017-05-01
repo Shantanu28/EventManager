@@ -26,7 +26,7 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = {"com.cultur.eventmanager.repositories"})
-@ComponentScan({"com.cultur.eventmanager"})
+@ComponentScan(basePackages = { "com.cultur.eventmanager", "com.cultur.eventmanager.repositories", "com.cultur.eventmanager.services", "com.cultur.eventmanager.controllers" })
 @PropertySource(value = {"classpath:application.properties"})
 public class HibernateConfiguration {
 
@@ -63,10 +63,10 @@ public class HibernateConfiguration {
     }
 
     @Bean
-    public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
+    public PlatformTransactionManager transactionManager() {
         logger.info("Initializing JpaTransactionManager...");
         JpaTransactionManager txManager = new JpaTransactionManager();
-        txManager.setEntityManagerFactory(emf);
+        txManager.setEntityManagerFactory(entityManagerFactory().getObject());
         logger.info("JpaTransactionManager initialized...");
 
         return txManager;

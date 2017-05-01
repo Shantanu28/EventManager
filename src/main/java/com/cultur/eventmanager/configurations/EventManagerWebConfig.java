@@ -31,7 +31,7 @@ import java.util.Properties;
 @Configuration
 @EnableWebMvc
 @EnableScheduling
-@ComponentScan("com.cultur.eventmanager")
+@ComponentScan(basePackages = { "com.cultur.eventmanager", "com.cultur.eventmanager.repositories", "com.cultur.eventmanager.services", "com.cultur.eventmanager.controllers" })
 @PropertySource("classpath:application.properties")
 public class EventManagerWebConfig extends WebMvcConfigurerAdapter {
 
