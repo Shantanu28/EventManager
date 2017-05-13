@@ -28,8 +28,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 @PropertySource("classpath:application.properties")
 public class EventManagerRabbitMqConfig {
 
-    private static final String EVENT_DATA_MESSAGE_QUEUE = "EVENT_DATA_PROCESS";
-
     @Autowired
     private PlatformTransactionManager transactionManager;
 
@@ -38,9 +36,9 @@ public class EventManagerRabbitMqConfig {
 
     @Bean
     public ConnectionFactory connectionFactory() {
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory("localhost");
-        connectionFactory.setUsername("guest");
-        connectionFactory.setPassword("guest");
+        CachingConnectionFactory connectionFactory = new CachingConnectionFactory(environment.getProperty("rabbitmq.host"));
+        connectionFactory.setUsername(environment.getProperty("rabbitmq.username"));
+        connectionFactory.setPassword(environment.getProperty("rabbitmq.password"));
         connectionFactory.setPort(5672);
 
         return connectionFactory;
@@ -55,8 +53,8 @@ public class EventManagerRabbitMqConfig {
     }
 
     @Bean
-    public Queue simpleQueue() {
-        return new Queue(EVENT_DATA_MESSAGE_QUEUE);
+    public Queue eventDataProcessingQueue() {
+        return new Queue(environment.getProperty("event.data.messages.queue"));
     }
 
     @Bean
@@ -65,9 +63,9 @@ public class EventManagerRabbitMqConfig {
     }
 
     @Bean(name = "eventDataProcessQueueTemplate")
-    public RabbitTemplate rabbitTemplate() {
+    public RabbitTemplate eventDataProcessQueueTemplate() {
         RabbitTemplate template = new RabbitTemplate(connectionFactory());
-        template.setRoutingKey(EVENT_DATA_MESSAGE_QUEUE);
+        template.setRoutingKey(environment.getProperty("event.data.messages.queue"));
         template.setMessageConverter(jsonMessageConverter());
         template.setChannelTransacted(true);
 
@@ -93,13 +91,12 @@ public class EventManagerRabbitMqConfig {
     public SimpleMessageListenerContainer listenerContainer() {
         SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer();
         listenerContainer.setConnectionFactory(connectionFactory());
-        listenerContainer.setQueues(simpleQueue());
-//        listenerContainer.setMessageConverter(jsonMessageConverter());
+        listenerContainer.setQueues(eventDataProcessingQueue());
         listenerContainer.setMessageListener(listenerAdapter());
         listenerContainer.setAcknowledgeMode(AcknowledgeMode.AUTO);
         listenerContainer.setChannelTransacted(true);
         listenerContainer.setDefaultRequeueRejected(false);
-        listenerContainer.setTransactionManager(transactionManager);
+//        listenerContainer.setTransactionManager(transactionManager);
 
         return listenerContainer;
     }

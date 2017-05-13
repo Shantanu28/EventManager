@@ -1,15 +1,10 @@
 package com.cultur.eventmanager.services;
 
 import com.cultur.eventmanager.dtos.request.EventPublishRequest;
-import com.cultur.eventmanager.entities.ImportEvent;
-import com.cultur.eventmanager.repositories.EventImportSourceRepository;
-import com.cultur.eventmanager.repositories.ImportEventRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.sql.Timestamp;
-import java.util.Date;
 
 /**
  * Created by shantanu on 1/5/17.
@@ -18,33 +13,30 @@ import java.util.Date;
 public class EventProcessor {
 
     @Autowired
-    private EventImportSourceRepository eventImportSourceRepository;
+    private HttpRequestService httpRequestService;
 
     @Autowired
-    private ImportEventRepository importEventRepository;
+    private EventManagerService eventManagerService;
+
+    @Value("${image.processor.url}")
+    private String imageProcessorUrl;
 
     private Logger logger = Logger.getLogger(EventProcessor.class);
 
-    public void processEvent(EventPublishRequest eventPublishRequest) {
+    public void processEvent(EventPublishRequest request) {
         logger.info("Recieved published message");
-        logger.info(eventPublishRequest.toString());
 
-        Integer maxImportSourceId = eventImportSourceRepository.getMaxImportSourceId(eventPublishRequest.getImportSrcName());
-
-        logger.info(maxImportSourceId);
-
-        if (maxImportSourceId == null) {
-            Timestamp timestamp = new Timestamp((new Date()).getTime());
-            ImportEvent importEvent = new ImportEvent();
-            importEvent.setCreatedAt(timestamp);
-            importEvent.setUpdatedAt(timestamp);
-            importEvent.setEventImportSource(eventImportSourceRepository.findByName(eventPublishRequest.getImportSrcName()));
-            importEvent.setWorkflowState("loading");
-
-            ImportEvent savedImportEvent = importEventRepository.save(importEvent);
-            maxImportSourceId = savedImportEvent.getId();
-        }
-
-        logger.info(maxImportSourceId);
+        int eventId = eventManagerService.execute(request);
+        startImageProcessing(eventId);
     }
+
+    private void startImageProcessing(int eventId) {
+        if (eventId > 0) {
+            httpRequestService.asyncPostService(imageProcessorUrl, "application/json;charset=UTF-8", "id=" + eventId);
+        }
+    }
+
+
+
+
 }

@@ -37,4 +37,69 @@ public class ImportEvent {
 
     @Column(name = "failure_notes")
     private String failureNotes;
+
+    public ImportEvent(ImportEventBuilder builder) {
+        this.eventImportSource = builder.eventImportSource;
+        this.workflowState = builder.workflowState;
+        this.createdAt = builder.createdAt;
+        this.updatedAt = builder.updatedAt;
+        this.numberOfEventsImported = builder.numberOfEventsImported;
+        this.failureNotes = builder.failureNotes;
+    }
+
+    public static class ImportEventBuilder {
+
+        private Integer id;
+        private EventImportSource eventImportSource;
+        private String workflowState;
+        private Timestamp createdAt;
+        private Timestamp updatedAt;
+        private Integer numberOfEventsImported;
+        private String failureNotes;
+
+        public ImportEventBuilder() {
+
+        }
+
+        public ImportEvent build() {
+            return new ImportEvent(this);
+        }
+
+        public ImportEventBuilder withId(Integer id) {
+            this.id = id;
+            return this;
+        }
+
+        public ImportEventBuilder withEventImportSource(EventImportSource eventImportSource) {
+            this.eventImportSource = eventImportSource;
+            return this;
+        }
+
+        public ImportEventBuilder withWorkflowState(String workflowState) {
+            this.workflowState = workflowState;
+            return this;
+        }
+
+        public ImportEventBuilder withCreatedAt(Timestamp createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public ImportEventBuilder withUpdatedAt(Timestamp updatedAt) {
+            this.updatedAt = updatedAt;
+            return this;
+        }
+
+        public ImportEventBuilder withNumberOfEventsImported(Integer numberOfEventsImported) {
+            this.numberOfEventsImported = numberOfEventsImported;
+            return this;
+        }
+
+        public ImportEventBuilder withFailureNotes(String failureNotes) {
+            this.failureNotes = failureNotes;
+            return this;
+        }
+    }
+
+
 }
