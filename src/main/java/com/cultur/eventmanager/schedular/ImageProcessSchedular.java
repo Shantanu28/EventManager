@@ -27,7 +27,6 @@ public class ImageProcessSchedular {
     @Value("${image.processor.url}")
     private String imageProcessorUrl;
 
-//    @Scheduled(cron = "${image.processing.cronexpression}")
     //every 5 min
     @Scheduled(fixedDelay = 300000)
     public void processImage() {

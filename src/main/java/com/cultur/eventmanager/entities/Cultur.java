@@ -25,7 +25,8 @@ public class Cultur {
     private List<CulturKeyword> culturKeywordList;
 
 
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy="culturList", cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    @JoinTable(name = "culturs_events", joinColumns = { @JoinColumn(name = "cultur_id") }, inverseJoinColumns = { @JoinColumn(name = "event_id") })
     private List<Event> eventList;
 
 

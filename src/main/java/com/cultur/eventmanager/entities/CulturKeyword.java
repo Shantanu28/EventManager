@@ -18,7 +18,7 @@ public class CulturKeyword {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cultur_id")
     private Cultur cultur;
 

@@ -19,7 +19,7 @@ public class ImportEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_import_source_id")
     private EventImportSource eventImportSource;
 

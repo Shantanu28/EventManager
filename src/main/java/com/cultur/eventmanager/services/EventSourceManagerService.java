@@ -43,17 +43,12 @@ public class EventSourceManagerService {
             ImportEvent importEvent = new ImportEvent(importEventBuilder);
 
             logger.info("Saving importEvent id");
-            ImportEvent savedImportEvent = importEventRepository.saveAndFlush(importEvent);
+            ImportEvent savedImportEvent = importEventRepository.save(importEvent);
             maxImportSourceId = savedImportEvent.getId();
             logger.info("Saved importEvent id: " + maxImportSourceId);
         } else {
             logger.info("importEvent id found updating the timestamp");
-            ImportEvent importEvent = importEventRepository.findOne(maxImportSourceId);
-            importEvent.setWorkflowState("loading");
-            importEvent.setCreatedAt(timestamp);
-            importEvent.setUpdatedAt(timestamp);
-
-            importEventRepository.saveAndFlush(importEvent);
+            importEventRepository.updateTimestamp("loading", timestamp, maxImportSourceId);
         }
 
         return String.valueOf(maxImportSourceId);

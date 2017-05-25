@@ -39,7 +39,7 @@ public class EventVenueManagerService {
                     .withCreatedAt(timestamp).withUpdatedAt(timestamp);
 
             Venue venue = new Venue(venueBuilder);
-            venueDetail = venueRepository.saveAndFlush(venue);
+            venueDetail = venueRepository.save(venue);
             logger.info("Created new venue entry, venueId: " + venueDetail.getId());
         } else {
             venueDetail = venueList.get(0);

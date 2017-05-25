@@ -2,6 +2,7 @@ package com.cultur.eventmanager.repositories;
 
 import com.cultur.eventmanager.entities.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,7 +17,13 @@ public interface EventsRepository extends JpaRepository<Event, Integer> {
 
     List<Event> findByNameIgnoreCaseAndLatitudeAndLongitude(String name, double latitude, double longitude);
 
+    List<Event> findByNameIgnoreCase(String name);
+
     @Query(value = "SELECT event.id as maxImportSourceId FROM Event event" +
             "  WHERE event.statusId = :statusId")
     List<Integer> findByStatusId(@Param("statusId") Integer statusId);
+
+    @Modifying
+    @Query(value = "DELETE FROM culturs_events WHERE event_id = :eventId", nativeQuery = true)
+    void deleteCategory(@Param("eventId") Integer eventId);
 }

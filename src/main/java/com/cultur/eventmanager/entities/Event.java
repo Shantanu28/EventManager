@@ -42,7 +42,7 @@ public class Event {
     @Column(name = "address")
     private String address;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id")
     private Venue venue;
 
@@ -109,8 +109,7 @@ public class Event {
     @Column(name = "timezone")
     private String timezone;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "culturs_events", joinColumns = { @JoinColumn(name = "event_id") }, inverseJoinColumns = { @JoinColumn(name = "cultur_id") })
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy="eventList", cascade = CascadeType.PERSIST)
     private List<Cultur> culturList;
 
     public Event(EventBuilder eventBuilder) {

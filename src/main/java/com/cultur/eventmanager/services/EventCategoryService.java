@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Created by shantanu on 3/5/17.
@@ -28,8 +30,8 @@ public class EventCategoryService {
         logger.info("Looking for event Category...");
         List<Cultur> culturEventList = new ArrayList<>();
 
-//        if (culturList == null)
-        culturList = culturRepository.findAll();
+        if (culturList == null)
+            culturList = culturRepository.findAll();
 
         culturList.forEach(cultur -> {
             String keywordSigular = English.plural(cultur.getName(), 1);
@@ -51,7 +53,9 @@ public class EventCategoryService {
             }
         });
 
-        return culturEventList;
+        List<Cultur> culturList = culturEventList.stream().map(cultur -> culturRepository.findOne(cultur.getId())).collect(Collectors.toList());
+
+        return culturList;
     }
 
     private boolean isPresent(String query, String s) {

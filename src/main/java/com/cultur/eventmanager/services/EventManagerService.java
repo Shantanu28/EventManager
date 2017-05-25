@@ -1,5 +1,6 @@
 package com.cultur.eventmanager.services;
 
+import com.cultur.eventmanager.constants.PriorityConstant;
 import com.cultur.eventmanager.dtos.request.EventPublishRequest;
 import com.cultur.eventmanager.entities.Cultur;
 import com.cultur.eventmanager.entities.Event;
@@ -16,11 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Created by shantanu on 10/5/17.
@@ -45,24 +50,48 @@ public class EventManagerService {
 
     private Logger logger = Logger.getLogger(EventManagerService.class);
 
-    private static final Map<String, Integer> priorityMap;
+    private final DateTimeFormatter DATE_TIME_FORMATTER =
+            new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").toFormatter();
 
-    private final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").toFormatter();
+    private static Predicate<Event> isLatLongEqual(EventPublishRequest request, Integer newScale) {
+        return event -> {
+            Double dbLatitude = EventUtil.roundOff.apply(event.getLatitude().toString(), newScale);
+            Double dbLongitude = EventUtil.roundOff.apply(event.getLongitude().toString(), newScale);
+            Double reqEventLat = EventUtil.roundOff.apply(request.getLatitude(), newScale);
+            Double reqEventLong = EventUtil.roundOff.apply(request.getLongitude(), newScale);
 
-    static {
-        priorityMap = new HashMap<>();
-        priorityMap.put("seatgeek", 1);
-        priorityMap.put("ticketfly", 2);
-        priorityMap.put("ticketmaster", 3);
-        priorityMap.put("goldstar", 4);
-        priorityMap.put("flavorus", 5);
-        priorityMap.put("eventbrite_api", 6);
-        priorityMap.put("wantickets", 7);
-        priorityMap.put("java_facebook_events", 8);
+            return dbLatitude.compareTo(reqEventLat) == 0 && dbLongitude.compareTo(reqEventLong) == 0;
+        };
     }
 
+    private static Predicate<Event> isEventDateEqual(EventPublishRequest request) {
+        return event -> {
+            String dbEventStartDate = timestampToDate.apply(event.getStart());
+            String requestedEventStartDate = EventUtil.timeZoneCoverter(request.getEventStartTime(),
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd",
+                    "UTC", "UTC");
+
+            return dbEventStartDate.equals(requestedEventStartDate);
+        };
+    }
+
+    private static Predicate<Event> isValidDuplicate(EventPublishRequest request, Integer newScale) {
+        return event -> isEventDateEqual(request).and(isLatLongEqual(request, newScale)).test(event);
+    }
+
+    private static Function<Timestamp, String> timestampToDate = timestamp -> {
+        if (timestamp == null)
+            return "";
+
+        Date date = Date.from(timestamp.toInstant());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        return simpleDateFormat.format(date);
+    };
+
     @Transactional
-    public int execute(EventPublishRequest request) {
+    public Integer execute(EventPublishRequest request) {
         try {
             String importEventId = eventSourceManagerService.findOrCreateImportEventId(request.getImportSrcName());
             request.setImportEventId(importEventId);
@@ -71,9 +100,7 @@ public class EventManagerService {
 
             List<Cultur> eventCategoryList = eventCategoryService.processEventForCategory(request.getEventName(), request.getEventDescription());
 
-            int eventId = findOrCreateEvent(request, venueDetail, eventCategoryList);
-
-            return eventId;
+            return findOrCreateEvent(request, venueDetail, eventCategoryList);
         } catch (Exception ex) {
             logger.error("Error found " + ex);
             throw new AmqpRejectAndDontRequeueException(ex);
@@ -82,46 +109,83 @@ public class EventManagerService {
 
     private Integer findOrCreateEvent(EventPublishRequest request, Venue venueDetail, List<Cultur> eventCategoryList) {
         logger.info("Looking for duplicate event");
-        List<Event> findDuplicate = eventsRepository.findByNameIgnoreCaseAndLatitudeAndLongitude(request.getEventName(),
-                Double.valueOf(request.getLatitude()), Double.valueOf(request.getLongitude()));
+        List<Event> duplicateEvents = eventsRepository.findByNameIgnoreCase(request.getEventName());
 
-        if (EventUtil.isListEmpty.negate().test(findDuplicate)) {
-            logger.info("Duplicate event found, count: " + findDuplicate.size());
-
-            if (priorityMap.get(request.getImportSrcName().toLowerCase()) == null) {
-                logger.info("Import source has less priority, so skipping");
-                return 0;
-            }
-
-            boolean flag = false;
-            Event event = findDuplicate.get(0);
-            logger.info("Trying to find import source");
-            ImportEvent importEvent = importEventRepository.findOne(event.getImportEventId());
-
-            if (importEvent == null) {
-                logger.info("Import source not found");
-                return 0;
-            }
-
-            String name = importEvent.getEventImportSource().getName();
-            logger.info("Import source found, src: " + name);
-
-            if (priorityMap.get(name) == null) {
-                flag = true;
-            } else {
-                if (priorityMap.get(name) >= priorityMap.get(request.getImportSrcName().toLowerCase())) {
-                    flag = true;
-                }
-            }
-
-            if (flag) {
-                return updateEvent(request, venueDetail, eventCategoryList, event);
-            }
-
-            return 0;
-        } else {
+        if (EventUtil.isListEmpty.test(duplicateEvents)) {
             return saveEvent(request, venueDetail, eventCategoryList);
         }
+
+        logger.info("Duplicate event found, count: " + duplicateEvents.size());
+
+        List<Event> duplicateEventList = duplicateEvents.stream().filter(isValidDuplicate(request, 2)).collect(Collectors.toList());
+
+        if (EventUtil.isListEmpty.test(duplicateEventList))
+            return saveEvent(request, venueDetail, eventCategoryList);
+        else {
+            Event event = getHighestPriorityEvent(duplicateEventList, request.getImportSrcName());
+
+            if (event != null)
+                return updateEvent(request, venueDetail, eventCategoryList, event);
+            else
+                return 0;
+        }
+    }
+
+    private Event getHighestPriorityEvent(List<Event> duplicateEventList, String reqImportSrcName) {
+        duplicateEventList.sort((event1, event2) -> {
+            if (event1.getImportEventId() == null)
+                return 1;
+
+            if (event2.getImportEventId() == null)
+                return -1;
+
+            ImportEvent importEvent1 = importEventRepository.findOne(event1.getImportEventId());
+            ImportEvent importEvent2 = importEventRepository.findOne(event2.getImportEventId());
+
+            if (importEvent1 == null)
+                return 1;
+
+            if (importEvent2 == null)
+                return -1;
+
+            String importSrcName1 = importEvent1.getEventImportSource().getName();
+            String importSrcName2 = importEvent2.getEventImportSource().getName();
+
+            Integer importSrcIndex1 = PriorityConstant.priorityMap.get(importSrcName1);
+            Integer importSrcIndex2 = PriorityConstant.priorityMap.get(importSrcName2);
+
+            if (importSrcIndex1 == null)
+                return 1;
+
+            if (importSrcIndex2 == null)
+                return -1;
+
+            return importSrcIndex1 - importSrcIndex2;
+        });
+
+        Event highPriorityEvent = duplicateEventList.get(0);
+
+        if (duplicateEventList.size() > 1) {
+            duplicateEventList.subList(1, duplicateEventList.size()).forEach(event -> eventsRepository.delete(event.getId()));
+        }
+
+        if (highPriorityEvent.getImportEventId() == null)
+            return highPriorityEvent;
+
+        ImportEvent importEvent = importEventRepository.findOne(highPriorityEvent.getImportEventId());
+
+        if (importEvent == null)
+            return highPriorityEvent;
+
+        String importSrcName = importEvent.getEventImportSource().getName();
+
+        Integer importSrcIndex1 = PriorityConstant.priorityMap.get(importSrcName);
+        Integer importSrcIndex2 = PriorityConstant.priorityMap.get(reqImportSrcName.toLowerCase());
+
+        if (importSrcIndex1 == null || importSrcIndex2 == null || importSrcIndex2 <= importSrcIndex1)
+            return highPriorityEvent;
+        else
+            return null;
     }
 
     private Integer saveEvent(EventPublishRequest request, Venue venueDetail, List<Cultur> eventCategoryList) {
@@ -175,7 +239,7 @@ public class EventManagerService {
         eventBuilder.withStatusId(10);
 
         Event event = new Event(eventBuilder);
-        event = eventsRepository.saveAndFlush(event);
+        event = eventsRepository.save(event);
 
         logger.info("New Event created");
 
@@ -237,12 +301,11 @@ public class EventManagerService {
         event.setRecurType(request.getRecurType());
         event.setCulturList(eventCategoryList);
         event.setStatusId(10);
-        event = eventsRepository.saveAndFlush(event);
+
+        event = eventsRepository.save(event);
 
         logger.info("Event Updated...");
 
         return event.getId();
     }
-
-
 }
