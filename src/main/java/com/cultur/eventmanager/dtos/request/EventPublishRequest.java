@@ -3,11 +3,12 @@ package com.cultur.eventmanager.dtos.request;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Past;
+import javax.validation.constraints.Size;
 
 /**
  *
@@ -16,22 +17,27 @@ import javax.validation.constraints.Past;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ApiModel("Event publish request")
 public class EventPublishRequest {
 	@JsonProperty("source_url")
 	@NotEmpty
+	@ApiModelProperty(value = "the source website url", required = true)
 	private String officialWebSiteUrl;
 
 	@JsonProperty("name")
 	@NotEmpty
+	@ApiModelProperty(value = "Event title", required = true)
 	private String eventName;
 
 	@JsonProperty("description")
 	@NotEmpty
-	@Min(20)
+	@Size(min = 20)
+	@ApiModelProperty(value = "Event description", required = true)
 	private String eventDescription;
 
 	@JsonProperty("start")
 	@NotEmpty
+	@ApiModelProperty(value = "Event start time in GMT/UTC", required = true)
 	private String eventStartTime;
 
 	@JsonProperty("end")
@@ -39,17 +45,21 @@ public class EventPublishRequest {
 
 	@JsonProperty("timezone")
 	@NotEmpty
+	@ApiModelProperty(value = "Timezone of the event location", required = true)
 	private String eventTimeZone;
 
 	@JsonProperty("venue_name")
 	@NotEmpty
+	@ApiModelProperty(value = "Name of the venue of the event", required = true)
 	private String eventVenueName;
 
 	@JsonProperty("address")
 	@NotEmpty
+	@ApiModelProperty(value = "Address of event", required = true)
 	private String eventAddress;
 
 	@JsonProperty("remote_photo_url")
+	@ApiModelProperty(value = "Url of the event banner/image/photo")
 	private String eventPhotoUrl;
 
 	@JsonProperty("street")
@@ -80,6 +90,10 @@ public class EventPublishRequest {
 	@JsonProperty("latitude")
 	@NotEmpty
 	private String latitude;
+
+	@JsonProperty("import_src_name")
+	@NotEmpty
+	private String importSrcName;
 
 	@JsonProperty("import_event_id")
 	private String importEventId;
@@ -150,6 +164,7 @@ public class EventPublishRequest {
 				", eventTicketLink='" + eventTicketLink + '\'' +
 				", longitude='" + longitude + '\'' +
 				", latitude='" + latitude + '\'' +
+				", importSrcName='" + importSrcName + '\'' +
 				", importEventId='" + importEventId + '\'' +
 				", importSecret='" + importSecret + '\'' +
 				", importStatus='" + importStatus + '\'' +

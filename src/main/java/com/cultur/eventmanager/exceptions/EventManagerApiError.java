@@ -29,4 +29,13 @@ public class EventManagerApiError {
         this.message = message;
         errors = Arrays.asList(error);
     }
+
+    @Override
+    public String toString() {
+        return "EventManagerApiError {" +
+                "status=" + status +
+                ", message='" + message + '\'' +
+                ", errors=" + errors +
+                '}';
+    }
 }

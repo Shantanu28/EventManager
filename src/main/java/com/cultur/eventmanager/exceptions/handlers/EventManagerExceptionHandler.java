@@ -1,6 +1,7 @@
 package com.cultur.eventmanager.exceptions.handlers;
 
 import com.cultur.eventmanager.exceptions.EventManagerApiError;
+import org.apache.log4j.Logger;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
  */
 @ControllerAdvice
 public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final Logger log = Logger.getLogger(EventManagerExceptionHandler.class);
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(final MethodArgumentNotValidException ex, final HttpHeaders headers, final HttpStatus status, final WebRequest request) {
@@ -44,6 +46,8 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         errors.addAll(globalErrorList);
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), errors);
+
+        log.error("Error caught: " + apiError);
         return handleExceptionInternal(ex, apiError, headers, apiError.getStatus(), request);
     }
 
@@ -59,6 +63,8 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         errors.addAll(globalErrorList);
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), errors);
+        log.error("Error caught: " + apiError);
+
         return handleExceptionInternal(ex, apiError, headers, apiError.getStatus(), request);
     }
 
@@ -69,6 +75,8 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         final String error = ex.getValue() + " value for " + ex.getPropertyName() + " should be of type " + ex.getRequiredType();
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), error);
+        log.error("Error caught: " + apiError);
+
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
 
@@ -79,6 +87,8 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         logger.info(ex.getClass().getName());
         final String error = ex.getRequestPartName() + " part is missing";
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), error);
+
+        log.error("Error caught: " + apiError);
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
 
@@ -89,6 +99,8 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         logger.info(ex.getClass().getName());
         final String error = ex.getParameterName() + " parameter is missing";
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), error);
+        log.error("Error caught: " + apiError);
+
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
 
@@ -98,6 +110,7 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         final String error = ex.getName() + " should be of type " + ex.getRequiredType().getName();
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), error);
+        log.error("Error caught: " + apiError);
 
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
@@ -108,6 +121,7 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         Set<ConstraintViolation<?>> constraintViolations = ex.getConstraintViolations();
         final List<String> errors = constraintViolations.stream().map(violation -> violation.getRootBeanClass().getName() + " " + violation.getPropertyPath() + ": " + violation.getMessage()).collect(Collectors.toList());
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), errors);
+        log.error("Error caught: " + apiError);
 
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
@@ -120,6 +134,7 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         final String error = "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL();
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.NOT_FOUND, ex.getLocalizedMessage(), error);
+        log.error("Error caught: " + apiError);
 
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
@@ -136,6 +151,7 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         ex.getSupportedHttpMethods().forEach(t -> builder.append(t + " "));
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.METHOD_NOT_ALLOWED, ex.getLocalizedMessage(), builder.toString());
+        log.error("Error caught: " + apiError);
 
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
@@ -151,6 +167,7 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         ex.getSupportedMediaTypes().forEach(t -> builder.append(t + " "));
 
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getLocalizedMessage(), builder.substring(0, builder.length() - 2));
+        log.error("Error caught: " + apiError);
 
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }
@@ -161,6 +178,7 @@ public class EventManagerExceptionHandler extends ResponseEntityExceptionHandler
         logger.info(ex.getClass().getName());
         logger.error("error", ex);
         final EventManagerApiError apiError = new EventManagerApiError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getLocalizedMessage(), "error occurred");
+        log.error("Error caught: " + apiError);
 
         return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
     }

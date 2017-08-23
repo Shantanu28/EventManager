@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class EventPublishResponse {
 
+    private String message;
     private ResponseStatus status;
-
 }
