@@ -1,6 +1,7 @@
 package com.cultur.eventmanager.repositories;
 
 import com.cultur.eventmanager.entities.Event;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,8 +21,8 @@ public interface EventsRepository extends JpaRepository<Event, Integer> {
     List<Event> findByNameIgnoreCase(String name);
 
     @Query(value = "SELECT event.id as maxImportSourceId FROM Event event" +
-            "  WHERE event.statusId = :statusId")
-    List<Integer> findByStatusId(@Param("statusId") Integer statusId);
+            "  WHERE event.statusId = :statusId ORDER BY event.start asc")
+    List<Integer> findTop1000ByStatusId(@Param("statusId") Integer statusId, Pageable pageable);
 
     @Modifying
     @Query(value = "DELETE FROM culturs_events WHERE event_id = :eventId", nativeQuery = true)

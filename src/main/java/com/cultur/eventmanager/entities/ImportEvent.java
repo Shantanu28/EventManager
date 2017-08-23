@@ -38,6 +38,10 @@ public class ImportEvent {
     @Column(name = "failure_notes")
     private String failureNotes;
 
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
     public ImportEvent(ImportEventBuilder builder) {
         this.eventImportSource = builder.eventImportSource;
         this.workflowState = builder.workflowState;

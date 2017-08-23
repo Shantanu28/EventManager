@@ -15,6 +15,6 @@ public interface EventImportSourceRepository extends JpaRepository<EventImportSo
     EventImportSource findByName(String importSrcName);
 
     @Query(value = "SELECT max(ie.id) as maxImportSourceId FROM EventImportSource eis" +
-            "  INNER JOIN ImportEvent ie ON (eis.id = ie.eventImportSource) WHERE eis.name = :importSrcName")
+            "  INNER JOIN ImportEvent ie ON (eis.id = ie.eventImportSource) WHERE ie.workflowState = 'loading' AND eis.name = :importSrcName")
     Integer getMaxImportSourceId(@Param("importSrcName") String importSrcName);
 }

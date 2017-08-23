@@ -5,6 +5,7 @@ import com.cultur.eventmanager.services.HttpRequestService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -27,12 +28,12 @@ public class ImageProcessSchedular {
     @Value("${image.processor.url}")
     private String imageProcessorUrl;
 
-    //every 5 min
-    @Scheduled(fixedDelay = 300000)
+    //every 1hr
+    @Scheduled(fixedDelay = 3600000)
     public void processImage() {
         logger.info("Starting image processing");
         try {
-            List<Integer> eventList = eventsRepository.findByStatusId(10);
+            List<Integer> eventList = eventsRepository.findTop1000ByStatusId(10, new PageRequest(0, 2000));
             eventList.forEach(event -> {
                 try {
                     httpRequestService.sequentialPostService(imageProcessorUrl, "application/json;charset=UTF-8", "id=" + event);

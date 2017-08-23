@@ -1,6 +1,5 @@
 package com.cultur.eventmanager.services;
 
-import com.cultur.eventmanager.dtos.request.EventPublishRequest;
 import com.cultur.eventmanager.entities.EventImportSource;
 import com.cultur.eventmanager.entities.ImportEvent;
 import com.cultur.eventmanager.repositories.EventImportSourceRepository;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Date;
 
 /**
  * Created by shantanu on 10/5/17.
@@ -29,7 +27,6 @@ public class EventSourceManagerService {
     public String findOrCreateImportEventId(String eventSourceName) {
         logger.info("Looking for importEventId");
         Integer maxImportSourceId = eventImportSourceRepository.getMaxImportSourceId(eventSourceName);
-
         Timestamp timestamp = Timestamp.from(Instant.now());
 
         if (maxImportSourceId == null) {
@@ -46,10 +43,19 @@ public class EventSourceManagerService {
             ImportEvent savedImportEvent = importEventRepository.save(importEvent);
             maxImportSourceId = savedImportEvent.getId();
             logger.info("Saved importEvent id: " + maxImportSourceId);
-        } else {
-            logger.info("importEvent id found updating the timestamp");
-            importEventRepository.updateTimestamp("loading", timestamp, maxImportSourceId);
-        }
+        }/* else {
+            try {
+                logger.info("importEvent id found updating the timestamp");
+                ImportEvent importEvent = importEventRepository.findOne(maxImportSourceId);
+                importEvent.setWorkflowState("loading");
+                importEvent.setCreatedAt(timestamp);
+                importEvent.setUpdatedAt(timestamp);
+
+                importEventRepository.save(importEvent);
+            } catch (Exception ex) {
+                logger.error("Exception occurs while updatation");
+            }
+        }*/
 
         return String.valueOf(maxImportSourceId);
     }
